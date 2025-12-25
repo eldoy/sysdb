@@ -1,0 +1,21 @@
+{
+  "name": "sysdb",
+  "version": "0.1.0",
+  "description": "System Database",
+  "author": "Vidar Eldøy <vidar@eldoy.com>",
+  "scripts": {
+    "test": "spekk",
+    "test:watch": "nodemon --exec spekk"
+  },
+  "homepage": "https://github.com/eldoy/sysdb#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eldoy/sysdb.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eldoy/sysdb/issues"
+  },
+  "devDependencies": {
+    "spekk": "^0.3.2"
+  }
+}
