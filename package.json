@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "High performance, safe, in-memory persistent JSON database with multi-process support.",
   "author": "Vidar Eldøy <vidar@eldoy.com>",
+  "license": "ISC",
   "scripts": {
     "test": "spekk",
     "test:watch": "nodemon --exec spekk"
