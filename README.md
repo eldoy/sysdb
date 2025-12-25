@@ -1,17 +1,25 @@
+Here is the **updated README for `sysdb`**, reflecting the **final minimal API** (`get()` + `set()` only), with **no `commit()`** and **no direct data access**.
+
+---
+
 ## sysdb
 
-A lightweight, **in-memory JSON database** for Node.js designed for speed and simplicity. Use it safely in single process environments only. Cluster or multi process not supported.
+A lightweight, **in-memory JSON database** for Node.js designed for speed and simplicity. Intended for **single-process environments only**. Clustered or multi-process usage is not supported.
 
-It is optimized for smaller datasets, in the order of **100,000 records**, providing synchronous read performance with asynchronous, debounced background writes.
+`sysdb` keeps all data in memory and persists snapshots to disk asynchronously. Reads are synchronous and fast; writes are debounced and persisted in the background.
+
+Optimized for smaller datasets, typically up to **~100,000 records**.
 
 ---
 
 ### Features
 
-* **Mongodb-style Queries:** Supports `$gt`, `$lt`, `$gte`, `$lte`, `$ne`, `$in`, `$nin`, and `$regex`.
-* **Atomic Persistence:** Writes to a `.tmp` file and renames it to ensure the database is never corrupted during a write.
-* **Date Support:** Automatic normalization and comparison of `Date` objects.
-* **Pagination:** Built-in `limit` and `skip` options.
+* **Mongo-style Queries:** `$gt`, `$lt`, `$gte`, `$lte`, `$ne`, `$in`, `$nin`, `$regex`
+* **In-memory Authority:** All reads operate on in-memory data
+* **Atomic Persistence:** Snapshots written via `.tmp` + rename
+* **Date Support:** Automatic normalization and comparison of `Date` values
+* **Pagination:** Built-in `limit` and `skip`
+* **Minimal API:** Only `get()` and `set()`
 
 ---
 
@@ -21,23 +29,26 @@ It is optimized for smaller datasets, in the order of **100,000 records**, provi
 npm i sysdb
 ```
 
+---
+
 ### Usage
 
 ```js
-// Single database / collection
 var sysdb = require('sysdb')
+
+// Single database / collection
 var db = sysdb('./sysdb.json')
 
 var users = db.get({ type: 'user' })
 
-// Multiple "tables"
+// Multiple logical tables
 var db = {
   users: sysdb('./users.json'),
   projects: sysdb('./projects.json'),
 }
 
-var users = db.users.get()
-var projects = db.projects.get()
+var users = db.users.get({})
+var projects = db.projects.get({})
 ```
 
 ---
@@ -46,7 +57,7 @@ var projects = db.projects.get()
 
 #### 1. Inserting Data
 
-If you pass a single object to `set()`, it performs an insert. It automatically generates a UUID `id` if one isn't provided.
+Passing a single object inserts a new document. A UUID `id` is generated automatically if missing.
 
 ```js
 await db.set({
@@ -57,9 +68,9 @@ await db.set({
 })
 ```
 
-#### 2. Querying with Operators
+---
 
-The `get()` method accepts a query object and an optional options object for pagination.
+#### 2. Querying with Operators
 
 ```js
 // Find high priority tasks
@@ -68,96 +79,90 @@ var tasks = db.get({
   status: { $ne: 'archived' }
 })
 
-// Use Regex and In-array checks
+// Regex and array operators
 var results = db.get({
   name: { $regex: /^Project/i },
   tags: { $in: ['urgent', 'active'] }
 })
-
 ```
+
+---
 
 #### 3. Updating Data
 
-Pass a query as the first argument and an update object as the second.
-
 ```js
-// Update all pending tasks to active
+// Update all pending tasks
 await db.set({ status: 'pending' }, { status: 'active' })
 
-// Update a specific record by ID
+// Update by ID
 await db.set({ id: 'some-uuid' }, { progress: 100 })
-
 ```
+
+---
 
 #### 4. Deleting Data
 
-Pass `null` as the second argument to delete matching records.
-
 ```js
-// Remove a specific record
+// Delete a single record
 await db.set({ id: 'some-uuid' }, null)
 
-// Clear all completed tasks
+// Delete all completed tasks
 await db.set({ status: 'completed' }, null)
 
 // Clear entire database
 await db.set({}, null)
 ```
 
+---
+
 #### 5. Pagination
 
-Efficiently page through results using `limit` and `skip`.
-
 ```js
-// Page 2: 10 items per page
 var page = db.get({ type: 'log' }, {
   limit: 10,
   skip: 10
 })
-
 ```
 
-#### 6. Manual Commits
+---
 
-Writes are debounced by 5ms to group rapid changes. Use `commit()` to ensure all data is flushed to the physical JSON file immediately.
+### Persistence Model
 
-```js
-await db.set({ important: 'data' })
-await db.commit() // Resolves once the JSON file is safely updated
+* Data is stored **in memory**
+* Writes are **debounced** (5 ms) and snapshotted to disk
+* Persistence is **eventual**
+* On process exit before snapshot, recent writes may be lost
 
-```
-
-#### 7. Direct data access
-
-The dataset is just an in-memory Javascript array. You can use it directly with normal Javascript functions.
-
-```js
-// Reading data
-var activeDocs = db.data.filter((doc) => doc.active)
-
-// Writing data is possible but unsafe
-db.data = []
-db.data = db.data.filter((doc) => doc.type ===  'project')
-
-// Use this to persist to disk immediately
-await db.commit()
-```
+There is no explicit flush or commit operation.
 
 ---
 
 ### API Reference
 
-| Method | Description |
-| --- | --- |
-| `get(query, [options])` | Returns an array of matching documents. Options: `{ limit, skip }`. |
-| `set(query, [values])` | **Insert:** One arg. **Update:** Query + Data. **Delete:** Query + `null`. |
-| `commit()` | Returns a promise that resolves once all in-flight writes are flushed to disk. |
-| `get data / set data` | Direct access to the in-memory array for bulk operations. |
+| Method                  | Description                                                   |
+| ----------------------- | ------------------------------------------------------------- |
+| `get(query, [options])` | Returns matching documents. Supports `{ limit, skip, sort }`. |
+| `set(query, [values])`  | Insert, update, or delete documents.                          |
+
+---
+
+### Limitations
+
+* Single process only
+* No multi-process safety
+* No transactional guarantees
+* No live reload of external file changes
+
+For multi-process or crash-durable use cases, use **`unitdb`** instead.
+
+---
 
 ### License
 
 ISC.
 
+---
+
 ### Acknowledgements
 
-Created by Vidar Eldøy, [Tekki AS](https://tekki.no)
+Created by Vidar Eldøy, Tekki AS.

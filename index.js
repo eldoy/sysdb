@@ -34,6 +34,7 @@ function sysdb(file) {
         !(condition instanceof RegExp)
       ) {
         var v = norm(value)
+
         for (var op in condition) {
           var target = condition[op]
 
@@ -65,9 +66,9 @@ function sysdb(file) {
     await fs.rename(tmp, file)
   }
 
-  function persist(force) {
+  function persist() {
     queue = queue.then(async function () {
-      if (!force && debounceMs > 0)
+      if (debounceMs > 0)
         await new Promise(function (r) {
           setTimeout(r, debounceMs)
         })
@@ -123,19 +124,8 @@ function sysdb(file) {
           if (matches(data[i], query)) Object.assign(data[i], values)
       }
 
-      await persist(false)
+      await persist()
       return id
-    },
-
-    async commit() {
-      await persist(true)
-    },
-
-    get data() {
-      return data
-    },
-    set data(v) {
-      data = v
     }
   }
 }
