@@ -2,7 +2,7 @@
 
 A lightweight, **in-memory JSON database** for Node.js designed for speed and simplicity. It features a **Write-Ahead Log (WAL)** for crash resilience, atomic file persistence, and a Mango/MongoDB-style query syntax.
 
-It is optimized for datasets under **10,000 records**, providing synchronous read performance with asynchronous, debounced background writes.
+It is optimized for smaller datasets, in the order of **100,000 records**, providing synchronous read performance with asynchronous, debounced background writes.
 
 ---
 
@@ -152,3 +152,11 @@ When initialized, `sysdb` performs the following startup sequence:
 | `set(query, [values])` | **Insert:** One arg. **Update:** Query + Data. **Delete:** Query + `null`. |
 | `commit()` | Returns a promise that resolves once all in-flight writes are flushed to disk. |
 | `get data / set data` | Direct access to the in-memory array for bulk operations. |
+
+### License
+
+ISC.
+
+### Acknowledgements
+
+Created by Vidar Eldøy, [Tekki AS](https://tekki.no)
