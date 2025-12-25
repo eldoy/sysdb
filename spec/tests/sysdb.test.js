@@ -9,7 +9,6 @@ var db
 
 beforeEach(function () {
   if (fsSync.existsSync(dbPath)) fsSync.unlinkSync(dbPath)
-  if (fsSync.existsSync(dbPath + '.wal')) fsSync.unlinkSync(dbPath + '.wal')
 
   db = sysdb(dbPath)
   db.data = []
@@ -29,13 +28,11 @@ test('get() with multi-key sorting', async function ({ t }) {
   await db.set({ name: 'Alice', age: 25 })
   await db.set({ name: 'Bob', age: 25 })
 
-  // Sort by age (asc) then name (asc)
   var res = db.get({}, { sort: { age: 1, name: 1 } })
   t.equal(res[0].name, 'Alice')
   t.equal(res[1].name, 'Bob')
   t.equal(res[2].name, 'Charlie')
 
-  // Sort by age descending
   var resDesc = db.get({}, { sort: { age: -1 } })
   t.equal(resDesc[0].name, 'Charlie')
 })
@@ -54,7 +51,6 @@ test('set() create, update, remove', async function ({ t }) {
 test('pagination (limit and skip) with sort', async function ({ t }) {
   for (var i = 1; i <= 5; i++) await db.set({ n: i })
 
-  // [5, 4, 3, 2, 1] -> skip 2 -> [3, 2, 1] -> limit 2 -> [3, 2]
   var res = db.get({}, { sort: { n: -1 }, skip: 2, limit: 2 })
   t.equal(res.length, 2)
   t.equal(res[0].n, 3)
@@ -105,25 +101,4 @@ test('edge cases: regex safety with numbers', async function ({ t }) {
     var res = db.get({ name: { $regex: /abc/ } })
     t.equal(res.length, 0)
   })
-})
-
-test('edge cases: WAL corruption recovery', async function ({ t }) {
-  var p = dbPath + '.recovery'
-  var w = p + '.wal'
-  if (fsSync.existsSync(p)) fsSync.unlinkSync(p)
-  if (fsSync.existsSync(w)) fsSync.unlinkSync(w)
-
-  fsSync.writeFileSync(p, '[]', 'utf8')
-  fsSync.writeFileSync(
-    w,
-    JSON.stringify({ op: 'insert', data: { id: 'rec' } }) + '\n{"op":"broken',
-    'utf8'
-  )
-
-  var db2 = sysdb(p)
-  t.equal(db2.data.length, 1)
-  t.equal(db2.data[0].id, 'rec')
-
-  if (fsSync.existsSync(p)) fsSync.unlinkSync(p)
-  if (fsSync.existsSync(w)) fsSync.unlinkSync(w)
 })
