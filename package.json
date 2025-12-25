@@ -1,7 +1,7 @@
 {
   "name": "sysdb",
   "version": "0.1.2",
-  "description": "High performance, safe, in-memory persistent JSON database with multi-process support.",
+  "description": "High performance in-memory persistent JSON database.",
   "author": "Vidar Eldøy <vidar@eldoy.com>",
   "license": "ISC",
   "scripts": {

@@ -13,6 +13,15 @@ function sysdb(file) {
     data = []
   }
 
+  function norm(v) {
+    if (v instanceof Date) return v.getTime()
+    if (typeof v === 'string') {
+      var t = Date.parse(v)
+      return isNaN(t) ? v : t
+    }
+    return v
+  }
+
   function matches(doc, query) {
     for (var k in query) {
       var condition = query[k]
@@ -24,6 +33,7 @@ function sysdb(file) {
         !Array.isArray(condition) &&
         !(condition instanceof RegExp)
       ) {
+        var v = norm(value)
         for (var op in condition) {
           var target = condition[op]
 
@@ -32,19 +42,7 @@ function sysdb(file) {
             continue
           }
 
-          var v =
-            value instanceof Date
-              ? value.getTime()
-              : typeof value === 'string' && !isNaN(Date.parse(value))
-              ? Date.parse(value)
-              : value
-
-          var t =
-            target instanceof Date
-              ? target.getTime()
-              : typeof target === 'string' && !isNaN(Date.parse(target))
-              ? Date.parse(target)
-              : target
+          var t = norm(target)
 
           if (op === '$gt' && !(v > t)) return false
           if (op === '$lt' && !(v < t)) return false
@@ -85,8 +83,12 @@ function sysdb(file) {
       var sort = options && options.sort
       var results = []
 
-      for (var i = 0; i < data.length; i++)
-        if (matches(data[i], query)) results.push(data[i])
+      if (!query || Object.keys(query).length === 0) {
+        results = data.slice()
+      } else {
+        for (var i = 0; i < data.length; i++)
+          if (matches(data[i], query)) results.push(data[i])
+      }
 
       if (sort) {
         var keys = Object.keys(sort)

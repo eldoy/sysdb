@@ -1,6 +1,6 @@
 ## sysdb
 
-A lightweight, **in-memory JSON database** for Node.js designed for speed and simplicity. It features a **Write-Ahead Log (WAL)** for crash resilience, atomic file persistence, and a Mango/MongoDB-style query syntax.
+A lightweight, **in-memory JSON database** for Node.js designed for speed and simplicity. Use it safely in single process environments only. Cluster or multi process not supported.
 
 It is optimized for smaller datasets, in the order of **100,000 records**, providing synchronous read performance with asynchronous, debounced background writes.
 
@@ -9,11 +9,9 @@ It is optimized for smaller datasets, in the order of **100,000 records**, provi
 ### Features
 
 * **Mongodb-style Queries:** Supports `$gt`, `$lt`, `$gte`, `$lte`, `$ne`, `$in`, `$nin`, and `$regex`.
-* **Crash Resilience:** Uses a `.wal` file to recover unsaved changes if the process exits unexpectedly.
 * **Atomic Persistence:** Writes to a `.tmp` file and renames it to ensure the database is never corrupted during a write.
 * **Date Support:** Automatic normalization and comparison of `Date` objects.
 * **Pagination:** Built-in `limit` and `skip` options.
-* **Concurrency:** Automatically pools and awaits in-flight writes during `commit()`.
 
 ---
 
@@ -26,8 +24,20 @@ npm i sysdb
 ### Usage
 
 ```js
+// Single database / collection
 var sysdb = require('sysdb')
 var db = sysdb('./sysdb.json')
+
+var users = db.get({ type: 'user' })
+
+// Multiple "tables"
+var db = {
+  users: sysdb('./users.json'),
+  projects: sysdb('./projects.json'),
+}
+
+var users = db.users.get()
+var projects = db.projects.get()
 ```
 
 ---
@@ -45,7 +55,6 @@ await db.set({
   priority: 1,
   createdAt: new Date()
 })
-
 ```
 
 #### 2. Querying with Operators
@@ -91,6 +100,8 @@ await db.set({ id: 'some-uuid' }, null)
 // Clear all completed tasks
 await db.set({ status: 'completed' }, null)
 
+// Clear entire database
+await db.set({}, null)
 ```
 
 #### 5. Pagination
@@ -124,23 +135,13 @@ The dataset is just an in-memory Javascript array. You can use it directly with 
 // Reading data
 var activeDocs = db.data.filter((doc) => doc.active)
 
-// Writing data is possible
+// Writing data is possible but unsafe
 db.data = []
 db.data = db.data.filter((doc) => doc.type ===  'project')
 
 // Use this to persist to disk immediately
 await db.commit()
 ```
-
----
-
-### Data Recovery Logic
-
-When initialized, `sysdb` performs the following startup sequence:
-
-1. **Read Snapshot:** Loads the main `.json` file into memory.
-2. **Replay WAL:** Reads the `.wal` file line-by-line, applying any operations that happened after the last snapshot.
-3. **Clean Up:** Once the WAL is replayed and a new snapshot is written, the WAL is cleared.
 
 ---
 
