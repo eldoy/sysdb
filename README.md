@@ -144,8 +144,4 @@ No schema migrations are required.
 
 ISC.
 
----
-
-### Acknowledgements
-
-Created by Vidar Eldøy.
+Created by [Vidar Eldøy](https://eldoy.com)
