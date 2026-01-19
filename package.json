@@ -1,6 +1,6 @@
 {
   "name": "sysdb",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Minimal SQLite-backed JSON document database for NodeJS.",
   "author": "Vidar Eldøy <vidar@eldoy.com>",
   "license": "ISC",
