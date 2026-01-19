@@ -119,6 +119,8 @@ function sysdb(file) {
   }
 
   return {
+    data: db,
+
     get(query, options, onBatch) {
       if (!query) query = {}
       if (!options) options = {}
